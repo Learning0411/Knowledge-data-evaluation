@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Opertions</title>
+    <link rel="stylesheet" href="static/layui/css/layui.css">
+</head>
+
+<body class="layuimini-main">
+<!-- 内容主体区域 -->
+<div style="padding: 30px;">
+    <!--搜索框 表格重载-->
+    <div class="demoTable">
+        <div class="layui-inline">
+            头实体：
+            <div class="layui-inline">
+                <input class="layui-input" name="searchead" id="headReload" autocomplete="off">
+            </div>
+            联系：
+            <div class="layui-inline">
+                <input class="layui-input" name="searchrelations" id="relationsReload" autocomplete="off">
+            </div>
+            尾实体：
+            <div class="layui-inline">
+                <input class="layui-input" name="searctail" id="tailReload" autocomplete="off">
+            </div>
+        </div>
+        <button class="layui-btn" data-type="reload">搜索</button>
+    </div>
+    <!--表格-->
+    <table class="layui-hide" id="triplet" lay-filter="triplet" lay-data="{ id:'idTable'}"></table>
+    <button type="button" class="layui-btn layui-btn-sm" id="importFile" value="导入文件" style="display: none"/>
+    <script type="text/html" id="toolbarDemo">
+        <div class="layui-btn-container">
+            <input type="button" class="layui-btn layui-btn-sm" lay-event="import" style="margin-left: 10px; "
+                   value="导入文件"/>
+        </div>
+    </script>
+
+    <script type="text/html" id="barDemo">
+        <a class="layui-btn layui-btn-xs" lay-event="edit">修改</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </script>
+</div>
+</body>
+
+<div>
+    <form class="layui-form" id="add_triplet_form" style="display:none" lay-filter="add_triplet_form">
+        <div style="margin-left: -20px;margin-top:35px;">
+            <div class="layui-form-item">
+                <label class="layui-form-label">头实体</label>
+                <div class="layui-input-block">
+                    <input type="text" name="new_head" required lay-verify="required" placeholder="请输入头实体"
+                           autocomplete="on" class="layui-input" id="new_head" style="width:250px">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">联系</label>
+                <div class="layui-input-block">
+                    <input type="text" name="new_relations" required lay-verify="required" placeholder="请输入联系"
+                           autocomplete="on" class="layui-input" id="new_relations" style="width:250px">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">尾实体</label>
+                <div class="layui-input-block">
+                    <input type="text" name="new_tail" required lay-verify="required" placeholder="请输入尾实体"
+                           autocomplete="on" class="layui-input" id="new_tail" style="width:250px">
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+</div>
+<script src="static/layui/layui.js"></script>
+<script>
+    layui.use('table', function () {
+        var table = layui.table;
+        table.render({ // 渲染
+            elem: '#triplet'
+            , id: 'triplet'
+            , url: 'http://127.0.0.1:8008/get_triplet'//数据接口
+            , page: {
+                layout: ['prev', 'next', 'page', 'skip', 'count', 'limit', 'refresh']
+            }
+            , limit: 10//每页显示的数量
+            , limits: [10, 15, 20, 30]
+            , loading: true//分页查询等待图标
+            , response: { // 解析服务器返回数据到表格
+                statusName: 'status' //规定数据状态的字段名称，默认：code
+                , statusCode: 200 //规定成功的状态码，默认：0
+                , msgName: 'msg' //规定状态信息的字段名称，默认：msg
+                , countName: 'count' //规定数据总数的字段名称，默认：count
+                , dataName: 'data' //规定数据列表的字段名称，默认：data
+            }
+            , toolbar: '#toolbarDemo' //开启头部工具栏，并为其绑定左侧模板
+            , defaultToolbar: ['exports',]
+            , title: '三元组数据表'
+            , cols: [[
+                {field: 'triplet_id', title: 'ID', width: 100, fixed: 'left', unresize: true, sort: true}
+                , {field: 'head', title: '头实体', width: 200}
+                , {field: 'relations', title: '联系', width: 200}
+                , {field: 'tail', title: '尾实体', width: 200}
+                , {fixed: 'right', title: '操作', toolbar: '#barDemo'}//绑定工具条模板
+            ]],
+        });
+
+        var $ = layui.$, active = {
+            reload: function () {
+                var headReload = $('#headReload');
+                var relationsReload = $('#relationsReload');
+                var tailReload = $('#tailReload');
+                //执行重载
+                table.reload('triplet', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    , where: {
+                        head: headReload.val()
+                        , relations: relationsReload.val()
+                        , tail: tailReload.val()
+                    }
+                });
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+        layui.use('upload', function () {
+            var upload = layui.upload;
+            var uploadInst = //指定允许上传的文件类型
+                upload.render({
+                    elem: '#importFile'
+                    , url: 'http://127.0.0.1:8000/file_add_triplet' //改成您自己的上传接口
+                    , accept: 'file' //普通文件
+                    , acceptMime: '.txt'
+                    , done: function (res) {
+                        table.reload('triplet', {//table重新渲染
+                            page: {
+                                curr: 1//重新从第一页开始
+                            }
+                        });
+                        layer.msg(res.msg);
+                        // Layui的table在reload之后使用ID绑定的按钮失效，需要重新绑定
+                        //bindTableToolbarFunction();
+                    }
+                });
+        });
+
+        //头工具栏事件
+        table.on('toolbar(triplet)', function (obj) {
+            var $ = layui.jquery;
+            switch (obj.event) {
+                case 'import'://获取选中数据
+                    $("#importFile").click();
+                    break;
+            }
+        });
+
+        //监听行工具事件
+        table.on('tool(triplet)', function (obj) {
+            var data = obj.data; // 获取行元素
+            var $ = layui.jquery;
+            //将编辑框内的表单赋初值
+            $("#new_head").val(data.head);
+            $("#new_relations").val(data.relations);
+            $("#new_tail").val(data.tail);
+            var send_data = {};
+            // var triplet_ids = [];
+            // var triplet_id = data.triplet_id; //行ID
+            // triplet_ids.push(triplet_id);
+            // send_data['triplet_id'] = triplet_ids;
+            send_data['head'] = data.head;
+            send_data['relations'] = data.relations;
+            send_data['tail'] = data.tail;
+            //console.log(triplet_ids);
+            if (obj.event === 'del') {   //如果是删除操作
+                layer.confirm('确认删除', function (index) {
+                    //访问服务器进行删除
+                    $.ajax({
+                        url: "http://127.0.0.1:8000/del_triplet",
+                        type: 'post',
+                        headers: {
+                            Accept: 'application/json;charset=utf-8'
+                        },
+                        dataType: 'json',
+                        data: JSON.stringify(send_data),
+                        success: function (data) {
+                            layer.msg(data.msg);
+                            table.reload('triplet', {
+                                page: {
+                                    curr: 1//重新从第一页开始
+                                }
+                            })
+                        }
+                    });
+                    layer.close(index);
+                });
+            } else if (obj.event === 'edit') {
+                layer.open({
+                    type: 1,
+                    area: ['385px', '300px'],
+                    title: '编辑'
+                    , content: $("#add_triplet_form"),
+                    shade: 0,
+                    btn: ['提交', '重置']
+                    , btn1: function (index, layero) {//修改提交信息
+                        var new_head = $("#new_head").val();
+                        var new_relations = $("#new_relations").val();
+                        var new_tail = $("#new_tail").val();
+                        // var new_triplet_info = {};
+                        // new_triplet_info['triplet_id'] = triplet_id;
+                        send_data['new_head'] = new_head;
+                        send_data['new_relations'] = new_relations;
+                        send_data['new_tail'] = new_tail;
+                        //alert(JSON.stringify(new_triplet_info));
+                        //发起http请求修改 ，注意传送行ID
+                        $.ajax({
+                            url: "http://127.0.0.1:8000/update_triplet",
+                            type: 'post',
+                            headers: {
+                                Accept: 'application/json;charset=utf-8'
+                            },
+                            dataType: 'json',
+                            data: JSON.stringify(send_data),
+                            success: function (data) {
+                                //输出返回信息
+                                layer.msg(data.msg);
+                                $("#add_triplet_form")[0].reset();//重置信息
+                                layui.form.render();
+                                //关闭弹出层
+                                layer.closeAll();
+                                //重载数据表格
+                                table.reload('triplet', {
+                                    page: {
+                                        curr: 1//重新从第一页开始
+                                    }
+                                });
+                            }
+                        });
+                    },
+                    btn2: function (index, layero) {//重置信息
+                        //$("#add_triplet_form")[0].reset(); //清空数据
+                        $("#new_head").val(obj.data.head);//重置信息
+                        $("#new_relations").val(obj.data.relations);
+                        $("#new_tail").val(obj.data.tail);
+                        layui.form.render();
+                        return false;
+                    },
+                    cancel: function (layero, index) {//关闭弹出层
+                        //$("#add_triplet_form")[0].reset();             //清空数据
+                        $("#new_head").val(obj.data.head);//重置信息
+                        $("#new_relations").val(obj.data.relations);
+                        $("#new_tail").val(obj.data.tail);
+                        layui.form.render();
+                        layer.closeAll();
+                    }
+                });
+            }
+        });
+    });
+
+</script>
+
+</body>
+
+</html>

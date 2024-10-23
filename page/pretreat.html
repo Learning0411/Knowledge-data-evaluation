@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>标签计数面积图</title>
+    <script src="./static/js/echarts.min.js"></script>
+    <link rel="stylesheet" href="../lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="../lib/font-awesome-4.7.0/css/font-awesome.min.css" media="all">
+    <link rel="stylesheet" href="../css/public.css" media="all">
+    <style>
+        .CI_container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .chart {
+            width: 98%;
+            height: 100%;
+            background-color: white;
+            margin-bottom: 20px;
+        }
+        .container {
+            display: flex; /* 使用Flex布局 */
+            justify-content: space-between; /* 两个元素之间的空间均匀分布 */
+            align-items: center; /* 垂直居中对齐 */
+            width: 100%; /* 宽度占页面80% */
+            margin: 10px auto; /* 上下居中 */
+        }
+        .button-container {
+            flex: 0.5; /* 占据1/3的空间 */
+            text-align: left; /* 按钮左对齐 */
+        }
+        .progress-container {
+            flex: 2.5; /* 占据2/3的空间 */
+            text-align: right; /* 进度条右对齐 */
+        }
+        .button-container button {
+            margin: 0 10px; /* 按钮间距 */
+        }
+        .progress-bar {
+            width: 0%; /* 初始宽度为0% */
+            height: 30px; /* 高度 */
+            background-color: #4caf50; /* 进度条颜色 */
+            text-align: center; /* 文字居中 */
+            line-height: 30px; /* 行高 */
+            color: white; /* 文字颜色 */
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0">
+    <div class="container">
+        <div class="button-container">
+            <button onclick="startComputation()" type="button" class="layui-btn">开始评测</button>
+            <button onclick="loadAndVisualizeData()" type="button" class="layui-btn">刷新数据</button>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar">0%</div>
+        </div>
+    </div>
+    <div class="CI_container">
+        <div id="main" class="chart" style="height: 600px;"></div>
+    </div>
+
+    <script>
+        function startComputation() {
+            fetch('http://127.0.0.1:8008/start-computation-relevance')
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.status);
+                    updateProgress(); // 开始更新进度条
+                })
+                .catch(error => console.error("Error starting computation:", error));
+        }
+
+        // 更新进度条
+        function updateProgress() {
+            fetch('http://127.0.0.1:8008/get-screening-progress')
+                .then(response => response.json())
+                .then(data => {
+                    const progressBar = document.getElementById('progress-bar');
+                    const progress = data.progress.toFixed(2); // 保留两位小数的进度值
+
+                    progressBar.style.width = progress + '%';
+                    progressBar.innerText = progress + '%'; // 更新进度条的显示文字
+
+                    if (progress < 100) {
+                        setTimeout(updateProgress, 1000); // 每秒钟更新一次进度条
+                    } else {
+                        loadAndVisualizeData(); // 计算完成后加载并展示数据
+                    }
+                })
+                .catch(error => console.error("Error updating progress:", error));
+        }
+
+        function loadAndVisualizeData() {
+            fetch('../Data/relevance/label_counts.json')
+                .then(response => response.text())
+                .then(rawData => {
+                    var data = rawData.trim().split('\n').map(JSON.parse);
+
+                    var batchNumbers = [];
+                    var labelCounts = [];
+
+                    data.forEach(batch => {
+                        batchNumbers.push('Batch ' + batch.batch_number);
+                        labelCounts.push(batch.label_count);
+                    });
+
+                    // 配置面积图
+                    var option = {
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'line'
+                            }
+                        },
+                        xAxis: {
+                            type: 'category',
+                            boundaryGap: false,
+                            data: batchNumbers
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [{
+                            data: labelCounts,
+                            type: 'line',
+                            areaStyle: {}  // 启用面积图
+                        }]
+                    };
+
+                    // 初始化图表
+                    var myChart = echarts.init(document.getElementById('main'));
+                    myChart.setOption(option);
+                })
+                .catch(error => console.error("Error loading the JSON data:", error));
+        }
+
+        // 页面加载时调用
+        window.onload = loadAndVisualizeData;
+    </script>
+</body>
+</html>

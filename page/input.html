@@ -1,0 +1,37 @@
+<p>{{ movies|length }} Titles</p>
+<form method="post">
+    Name <input type="text" name="title" autocomplete="off" required>
+    Year <input type="text" name="year" autocomplete="off" required>
+    <input class="btn" type="submit" name="submit" value="Add">
+</form>
+
+/* 覆盖某些浏览器对 input 元素定义的字体 */
+input[type=submit] {
+    font-family: inherit;
+}
+
+input[type=text] {
+    border: 1px solid #ddd;
+}
+
+input[name=year] {
+    width: 50px;
+}
+
+.btn {
+    font-size: 12px;
+    padding: 3px 5px;
+    text-decoration: none;
+    cursor: pointer;
+    background-color: white;
+    color: black;
+    border: 1px solid #555555;
+    border-radius: 5px;
+}
+
+.btn:hover {
+    text-decoration: none;
+    background-color: black;
+    color: white;
+    border: 1px solid black;
+}

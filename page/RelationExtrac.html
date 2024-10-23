@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN" style="height: 100%">
+<head>
+    <meta charset="utf-8">
+    <title>基于实体关系比例的数据质量评价</title>
+    <script src="./static/js/echarts.min.js"></script>
+    <link rel="stylesheet" href="../lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="../lib/font-awesome-4.7.0/css/font-awesome.min.css" media="all">
+    <link rel="stylesheet" href="../css/public.css" media="all">
+    <style>
+        .DI_container {
+            display: flex;
+            justify-content: center;
+            height: 100%;
+        }
+        .chart {
+            width: 98%;
+            height: 100%;
+            background-color: white;
+            margin-bottom: 20px;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin: 10px auto;
+        }
+        .button-container {
+            flex: 0.5;
+            text-align: left;
+        }
+        .progress-container {
+            flex: 2.5;
+            text-align: right;
+        }
+        .button-container button {
+            margin: 0 10px;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 30px;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0">
+    <div class="container">
+        <div class="button-container">
+            <button onclick="startComputation()" type="button" class="layui-btn">开始计算</button>
+            <button onclick="loadAndVisualizeData()" type="button" class="layui-btn">刷新数据</button>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar">0%</div>
+        </div>
+    </div>
+    <div class="DI_container">
+        <div id="main" class="chart" style="height: 600px;"></div>
+    </div>
+
+    <script>
+        function startComputation() {
+            fetch('http://127.0.0.1:8008/start-degree-count-calculation')
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.status);
+                    updateProgress(); // 开始更新进度条
+                })
+                .catch(error => console.error("Error starting computation:", error));
+        }
+
+        // 更新进度条
+        function updateProgress() {
+            fetch('http://127.0.0.1:8008/get-degree-count-progress')
+                .then(response => response.json())
+                .then(data => {
+                    const progressBar = document.getElementById('progress-bar');
+                    const progress = ((data.current / data.total) * 100).toFixed(2); // 保留两位小数的进度值
+
+                    progressBar.style.width = progress + '%';
+                    progressBar.innerText = progress + '%'; // 更新进度条的显示文字
+
+                    if (data.current < data.total) {
+                        setTimeout(updateProgress, 1000); // 每秒钟更新一次进度条
+                    } else {
+                        loadAndVisualizeData(); // 计算完成后加载并展示数据
+                    }
+                })
+                .catch(error => console.error("Error updating progress:", error));
+        }
+
+        function loadAndVisualizeData() {
+            fetch('../Data/degree/degree_counts.json')
+                .then(response => response.json())
+                .then(degreeCount => {
+                    // 将 degreeCount 转换为两个数组，分别用于 x 轴和 y 轴
+                    var degrees = Object.keys(degreeCount);
+                    var counts = Object.values(degreeCount);
+
+                    // 初始化 ECharts 实例
+                    var barChart = echarts.init(document.getElementById('main'));
+
+                    // 指定柱状图的配置项和数据
+                    var barOptions = {
+                        title: {
+                            text: '实体节点度分布图'
+                        },
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'shadow'
+                            }
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: degrees,
+                            axisLabel: {
+                                interval: 'auto',
+                                rotate: 45 // 旋转标签以避免重叠
+                            },
+                            name: '节点度数'
+                        },
+                        yAxis: {
+                            type: 'value',
+                            name: '实体数'
+                        },
+                        dataZoom: [
+                            {
+                                type: 'slider',
+                                show: true,
+                                xAxisIndex: [0],
+                                start: 0,
+                                end: 10 // 默认显示数据的10%
+                            },
+                            {
+                                type: 'inside',
+                                xAxisIndex: [0],
+                                start: 0,
+                                end: 10
+                            }
+                        ],
+                        series: [{
+                            name: '实体数',
+                            type: 'bar',
+                            data: counts
+                        }]
+                    };
+
+                    // 使用指定的配置项和数据显示图表
+                    barChart.setOption(barOptions);
+                })
+                .catch(error => console.error("Error loading the JSON data:", error));
+        }
+
+        // 页面加载时调用
+        window.onload = loadAndVisualizeData;
+    </script>
+</body>
+</html>

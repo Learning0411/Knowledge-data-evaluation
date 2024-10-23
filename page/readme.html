@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>面向知识融合更新的源数据质量检测评估软件</title>
+    <link rel="stylesheet" href="./static/bootstrap/css/bootstrap.min.css">
+    <style>
+        .container {
+            margin-top: 50px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+        .section h3 {
+            margin-bottom: 20px;
+        }
+        .section p {
+            margin-bottom: 10px;
+        }
+        .section ol {
+            margin-bottom: 10px;
+        }
+        .section img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 数据上传 -->
+        <div class="section">
+            <h3>数据上传</h3>
+            <p><strong>上传三元组文件：</strong></p>
+            <ol>
+                <li>点击“上传三元组文件”部分中的文件选择按钮，选择要上传的文件。</li>
+                <li>点击“上传三元组文件”按钮提交表单。</li>
+                <li>等待上传完成后，在页面上将显示上传状态消息。</li>
+            </ol>
+            <p><strong>上传实体文件：</strong></p>
+            <ol>
+                <li>点击“上传实体文件”部分中的文件选择按钮，选择要上传的文件。</li>
+                <li>点击“上传实体文件”按钮提交表单。</li>
+                <li>等待上传完成后，在页面上将显示上传状态消息。</li>
+            </ol>
+            <img src="../images/上传数据.png" alt="数据上传">
+            <p>三元组文件和实体文件均为csv格式，具体格式如下图：</p>
+            <img src="../images/三元组格式.png" alt="三元组数据格式">
+            <img src="../images/实体格式.png" alt="实体数据格式">
+        </div>
+
+        <!-- 数据质量评估 -->
+        <div class="section">
+            <h3>基于实体关系数量的数据质量评测</h3>
+            <p>点击页面上的“开始评测”按钮，启动数据质量评测过程。这将触发后台计算数据的数量和质量评估。</p>
+            <img src="../images/数量.png" alt="基于实体关系数量的数据质量评价">
+        </div>
+
+        <div class="section">
+            <h3>基于实体关系一致性的数据质量评测</h3>
+            <p>点击页面上的“开始评测”按钮，启动数据质量评测过程。这将触发后台计算数据的数量和质量评估。</p>
+            <img src="../images/一致性.png" alt="基于实体关系一致性的数据质量评价">
+        </div>
+
+        <div class="section">
+            <h3>基于实体关系比例的数据质量评测</h3>
+            <p>点击页面上的“开始评测”按钮，启动数据质量评测过程。这将触发后台计算数据的数量和质量评估。</p>
+            <img src="../images/比例.png" alt="基于实体关系比例的数据质量评价">
+        </div>
+
+        <div class="section">
+            <h3>基于三元组内容相关度的数据质量评测</h3>
+            <p>点击页面上的“开始评测”按钮，启动数据质量评测过程。这将触发后台计算数据的数量和质量评估。</p>
+            <img src="../images/相关度.png" alt="基于三元组相关度的数据质量评价">
+        </div>
+
+        <div class="section">
+            <h3>数据质量筛选</h3>
+            <p>点击页面上的“开始评测”按钮，启动数据质量评测过程。这将触发后台计算数据的数量和质量评估。</p>
+            <img src="../images/质量.png" alt="数据质量筛选">
+        </div>
+    </div>
+</body>
+</html>

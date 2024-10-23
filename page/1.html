@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>数据预处理</title>
+    <link rel="stylesheet" href="static/layui/css/layui.css">
+
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    <div class="layui-header">
+        <div class="layui-logo">白鹤梁知识图谱管理系统</div>
+    <div class="layui-side layui-bg-black">
+        <div class="layui-side-scroll">
+            <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+            <ul class="layui-nav layui-nav-tree" lay-filter="triplet">
+                <li class="layui-nav-item"><a href="/1">1.数据预处理</a></li>
+              <li class="layui-nav-item"><a href="/2">2.数据收集</a></li>
+              <li class="layui-nav-item"><a href="/3">3.数据实体抽取</a></li>
+              <li class="layui-nav-item"><a href="/4">4.数据(三元组)抽取</a></li>
+              <li class="layui-nav-item"><a href="/5">5.知识融合与图谱构建</a></li>
+              <li class="layui-nav-item"><a href="/6">6.知识转换备份</a></li>
+              <li class="layui-nav-item"><a href="/7">7.学术论文转换存储</a></li>
+              <li class="layui-nav-item"><a href="/8">8.三元组的增删改查</a></li>
+            </ul>
+        </div>
+    </div>
+
+    </div>
+</div>
+
+<fieldset class="layui-elem-field layui-field-title" style="margin-left: 5.5cm; margin-top:2cm">
+<input type="file" id="file">
+<div id="text"></div>
+</fieldset>
+<script>
+    let reader = null; // 声明reader变量方便后面使用
+
+const fileNode = document.querySelector('#file'); // 获取input标签
+
+fileNode.addEventListener('change', (e) => { // 为获取的input标签添加事件监听，当选择文件以后触发
+  if (window.FileReader) { // 判断浏览器中有没有FileReader，毕竟现在不是所有浏览器都有FileReader
+    reader = new FileReader(); // 实例化FileReader
+    reader.onload = (event) => { // 设置读取成功以后执行的方法
+      document.querySelector('#text').innerHTML = event.target.result; // 前面说过，成功返回的数据再result属性中，然后将拿回来的文本添加到指定标签中
+    }
+  } else { // 没有FileReader的弹出警告然后返回
+    alert('你的先浏览器没有FileReader，不能这么干！');
+    return;
+  }
+  const file = e.target.files[0]; // 拿到选择的文件信息
+  reader.readAsText(file); // 将文件信息转成文本，默认是UTF-8格式，这个就是转成功后执行 reader.onload 方法
+})
+</script>
+
+<div class="layui-btn-container">
+  <button type="button" class="layui-btn layui-btn-primary">原始按钮</button>
+  <button type="button" class="layui-btn">默认按钮</button>
+    <a href="deskexe://" class="layui-btn layui-btn-green">特殊字符处理</a>
+
+</div>
+
+<fieldset class="layui-elem-field layui-field-title2" style="margin-left: 5.5cm; margin-top:0.3cm">
+<input type="file" id="file2">
+<div id="text2"></div>
+</fieldset>
+
+
+<script src="static/layui/layui.js" charset="utf-8"></script>
+<!-- 注意：如果你直接复制所有代码到本地，上述 JS 路径需要改成你本地的 -->
+<script>
+
+let reader2 = null; // 声明reader变量方便后面使用
+
+const fileNode2 = document.querySelector('#file2'); // 获取input标签
+
+fileNode2.addEventListener('change', (e) => { // 为获取的input标签添加事件监听，当选择文件以后触发
+  if (window.FileReader) { // 判断浏览器中有没有FileReader，毕竟现在不是所有浏览器都有FileReader
+    reader2 = new FileReader(); // 实例化FileReader
+    reader2.onload = (event2) => { // 设置读取成功以后执行的方法
+      document.querySelector('#text2').innerHTML = event2.target.result; // 前面说过，成功返回的数据再result属性中，然后将拿回来的文本添加到指定标签中
+    }
+  } else { // 没有FileReader的弹出警告然后返回
+    alert('你的先浏览器没有FileReader，不能这么干！');
+    return;
+  }
+  const file2 = e.target.files[0]; // 拿到选择的文件信息
+  reader2.readAsText(file2); // 将文件信息转成文本，默认是UTF-8格式，这个就是转成功后执行 reader.onload 方法
+})
+</script>
+</body>
+</html>

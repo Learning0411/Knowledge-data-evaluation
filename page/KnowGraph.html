@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>知识图谱</title>
+<style type="text/css">
+    body{
+	    background: url("../images/loginbg.png");
+	}
+</style>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<title>知识融合与图谱构建</title>
+	<link rel="stylesheet" href="static/layui/css/layui.css">
+	<script type="text/javascript" src="static/dist/neovis.js"></script>
+
+	<script src="https://code.jquery.com/jquery-3.2.1.min.js"
+		integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+<style type="text/css">
+        html, body {
+            font: 16pt arial;
+        }
+
+        #viz {
+            width: 1920px;
+            height: 900px;
+            border: 1px solid lightgray;
+            font: 22pt arial;
+        }
+
+    </style>
+	<script type="text/javascript">
+		// define config car
+		// instantiate nodevis object
+		// draw
+
+		var viz;
+
+
+		function draw() {
+            var config = {
+                container_id: "viz",
+                server_url: "bolt://localhost:7687",
+                server_user: "neo4j",
+                server_password: "18121812",
+                labels: {
+
+                    [NeoVis.NEOVIS_DEFAULT_CONFIG]:{
+						"caption": "name",
+						"color": 'red',
+                    },
+					"人物": {
+						// "color": "red"  // 设置标签为"Person"的节点颜色为红色
+						// size: 'age',
+						// size: 80,
+						color: 'red',
+						shape: 'circle',
+						caption: 'name'
+					},
+					'时代': {
+						// size: 80, 红 #960000  绿 7ADF40FF 蓝 紫 粉
+						color1: '#960000',
+						color2: '#7ADF40FF',
+						color3: '#000EA0FF',
+						color4: '#fd007d',
+						color5: '#fb5976',
+						color6: '#7b29ee',
+						color7: '#fdfd00',
+						color8: '#fa007c',
+						color9: '#f8bbc5',
+						color10: '#bff7ba',
+						color11: '#95bff9',
+						color: '#255b03',
+						shape: 'square',
+						caption: 'name'
+					},
+					// "人物": {
+					// 	"color": "red"  // 设置标签为"Person"的节点颜色为红色
+					// },
+                    "Character": {
+                        "caption": "name",
+                        "size": "pagerank",
+                        "community": "labels",
+                        "title_properties": [
+                            "name",
+                            "pagerank"
+                        ]
+                    }
+
+                },
+
+                relationships: {
+                    [NeoVis.NEOVIS_DEFAULT_CONFIG]: {
+                         "thickness": "defaultThicknessProperty",
+
+                    }
+                },
+				physics: {
+					enabled: true,
+					solver: 'forceAtlas2Based',
+					forceAtlas2Based: {
+						gravity: -50,
+						springLength: 100,
+						springConstant: 0.1
+					}
+				},
+				interaction: {
+					dragNodes: true,
+					hover: true,
+					selectable: true
+				},
+				// callbacks: {
+				// 	onNodeClick: (node) => {
+				// 		console.log('Clicked node:', node);
+				// 	},
+				// 	onRelationshipClick: (relationship) => {
+				// 		console.log('Clicked relationship:', relationship);
+				// 	},
+				// 	onNodeDragEnd: (node, event) => {
+				// 		console.log('Dragged node:', node);
+				// 		console.log('Drag event:', event);
+				// 	}
+				// },
+				hierarchical_layout: {
+					enabled: true,  // 启用分层布局
+					levelSeparation: 300,  // 节点层级之间的垂直间距
+					nodeSpacing: 100,  // 节点之间的水平间距
+					direction: "UD",  // 布局方向，可以是"UD"（自上而下）或"LR"（从左到右）
+					sortMethod: "directed"  // 节点排序方法，可以是"directed"（有向关系优先）或"hubsize"（节点度数优先）
+				},
+				 initial_cypher: "MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 100",
+                // initial_cypher: "MATCH p=(head)-->() RETURN head",
+                arrows: true
+            };
+
+            viz = new NeoVis.default(config);
+            viz.render();
+            console.log(viz);
+        }
+	</script>
+</head>
+
+<body class="layuimini-main">
+				<body onload="draw()">
+					<div id="viz"
+						style="width: 1920px;height: 1000px;border: 0px solid  ;font: 22pt arial; margin-left: 10px;text-align: center">
+					</div>
+				</body>
+
+		</div>
+				<div style="margin-top: -10px">
+					<fieldset class="layui-elem-field layui-field-title">
+						<legend><font color="white"> Cypher查询</font></legend>
+					</fieldset>
+				</div>
+					<div style="margin-top: -15px">
+						<textarea rows="3" id="cypher"
+							style="width: 1250px;margin-left: 10px; border: 2px solid black;"></textarea><br>
+
+						<div class="layui-btn-container" style="margin-left: 10px ;margin-top: 8px">
+
+							<button type="button" class="layui-btn layui-btn-green" id="reload">提交查询</button>
+							<button type="button" class="layui-btn layui-btn-danger" id="stabilize">图谱静止</button>
+							<button type="button" class="layui-btn layui-btn-danger" id="node_search">节点查询</button>
+							<button type="button" class="layui-btn layui-btn-danger" id="r_search">关系查询</button>
+
+						</div>
+					</div>
+
+
+				<script>
+					$("#reload").click(function () {
+
+						var cypher = $("#cypher").val();
+
+						if (cypher.length > 3) {
+							viz.renderWithCypher(cypher);
+						} else {
+							console.log("reload");
+							viz.reload();
+
+						}
+
+					});
+
+					$("#stabilize").click(function () {
+						viz.stabilize();
+					});
+
+					$("#node_search").click(function () {
+						var nodeName = $("#cypher").val();  // 获取节点名
+
+						if (nodeName.length > 0) {
+							var cypher = `MATCH (n {name: '${nodeName}'})-[r]-(neighbor) RETURN n, r, neighbor`;  // 构造Cypher查询语句
+							viz.renderWithCypher(cypher);  // 提交查询语句进行查询和可视化
+						} else {
+							console.log("Please enter a node name");
+						}
+					});
+
+				</script>
+
+
+	<script src="static/layui/layui.js" charset="utf-8"></script>
+	<!-- 注意：如果你直接复制所有代码到本地，上述 JS 路径需要改成你本地的 -->
+</body>
+
+</html>
