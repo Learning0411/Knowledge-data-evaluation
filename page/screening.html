@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Entity Similarity Visualization</title>
+    <link href="static/layui/css/layui.css" rel="stylesheet">
+    <link rel="stylesheet" href="../lib/font-awesome-4.7.0/css/font-awesome.min.css" media="all">
+    <link rel="stylesheet" href="../css/public.css" media="all">
+    <style>
+        .EI_container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* 垂直对齐方式调整为顶部对齐 */
+            width: 100%;
+            margin-top: 20px; /* 调整顶部间距 */
+        }
+        #data-table-container {
+            width: 50%;
+            background-color: white;
+            height: 500px;
+        }
+        #echarts-container {
+            width: 50%;
+            height: 500px;
+            margin-left: 20px; /* 添加左边距，增加图表和表格之间的间隔 */
+            background-color: white
+        }
+        .container {
+            display: flex; /* 使用Flex布局 */
+            justify-content: space-between; /* 两个元素之间的空间均匀分布 */
+            align-items: center; /* 垂直居中对齐 */
+            width: 100%; /* 宽度占页面80% */
+            margin: 10px auto; /* 上下居中 */
+        }
+        .button-container {
+            flex: 0.5; /* 占据1/3的空间 */
+            text-align: left; /* 按钮左对齐 */
+        }
+        .progress-container {
+            flex: 2.5; /* 占据2/3的空间 */
+            text-align: right; /* 进度条右对齐 */
+        }
+        .button-container button {
+            margin: 0 10px; /* 按钮间距 */
+        }
+        .progress-bar {
+            width: 0%; /* 初始宽度为0% */
+            height: 30px; /* 高度 */
+            background-color: #4caf50; /* 进度条颜色 */
+            text-align: center; /* 文字居中 */
+            line-height: 30px; /* 行高 */
+            color: white; /* 文字颜色 */
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0">
+    <div class="container">
+        <div class="button-container">
+            <button onclick="startComputation()" type="button" class="layui-btn">开始评测</button>
+            <button onclick="loadAndVisualizeData()" type="button" class="layui-btn">刷新数据</button>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar">0%</div>
+        </div>
+    </div>
+    <div class="EI_container">
+        <div id="data-table-container">
+            <table class="layui-hide" id="data-table"></table>
+            <script type="text/html" id="data-table-pagebar">
+                <div class="layui-btn-container">
+                    <button class="layui-btn layui-btn-sm" lay-event="footerDemoBtn1">底部按钮1</button>
+                    <button class="layui-btn layui-btn-sm" lay-event="footerDemoBtn2">底部按钮2</button>
+                </div>
+            </script>
+            <div id="pagination-container"></div>
+        </div>
+
+        <div id="echarts-container"></div>
+    </div>
+
+    <script src="static/layui/layui.js"></script>
+    <script src="./static/js/echarts.min.js"></script>
+    <script>
+        let currentPage = 1;
+        let rowsPerPage = 10; // 每页显示的行数
+        let tableData = [];
+
+        function loadAndVisualizeData() {
+            fetch('../Data/low_quality_triples/low_quality_triples.json')
+                .then(response => response.json())
+                .then(data => {
+                    tableData = Object.entries(data).flatMap(([category, triples]) =>
+                        triples.map(triple => ({category, subject: triple[0], predicate: triple[1], object: triple[2]}))
+                    );
+                    setupPagination();
+                    displayTable();
+                    visualizeRoseDiagram(); // 调用可视化南丁格尔玫瑰图的函数
+                })
+                .catch(error => console.error('Error loading table data:', error));
+        }
+
+        function displayTable() {
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const currentData = tableData.slice(start, end);
+
+            layui.table.render({
+                elem: '#data-table',
+                cols: [[
+                    {field: 'category', title: '类别', width: 270},
+                    {field: 'subject', title: '头实体', width: 270},
+                    {field: 'predicate', title: '关系', width: 240},
+                    {field: 'object', title: '尾实体', width: 280}
+                ]],
+                data: currentData,
+                page: false // 不使用table自带的分页
+            });
+        }
+
+        function setupPagination() {
+            layui.laypage.render({
+                elem: 'pagination-container',
+                count: tableData.length,
+                limit: rowsPerPage,
+                curr: currentPage,
+                layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'],
+                limits: [5, 10],
+                jump: function(obj, first) {
+                    if (!first) {
+                        currentPage = obj.curr;
+                        rowsPerPage = obj.limit;
+                        displayTable();
+                    }
+                }
+            });
+        }
+
+        function startComputation() {
+            fetch('http://127.0.0.1:8008/start-computation-screening')
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.status);
+                    updateProgress(); // 开始更新进度条
+                })
+                .catch(error => console.error("Error starting computation:", error));
+        }
+
+        function updateProgress() {
+        fetch('http://127.0.0.1:8008/get-screening-progress')
+            .then(response => response.json())
+            .then(data => {
+                console.log(data); // 打印返回的数据进行调试
+                const progressBar = document.getElementById('progress-bar');
+
+                if (data.current !== undefined && data.total !== undefined && !isNaN(data.current) && !isNaN(data.total)) {
+                    const progress = ((data.current / data.total) * 100).toFixed(2); // 保留两位小数的进度值
+
+                    progressBar.style.width = progress + '%';
+                    progressBar.innerText = progress + '%'; // 更新进度条的显示文字
+
+                    if (data.current < data.total) {
+                        setTimeout(updateProgress, 1000); // 每秒钟更新一次进度条
+                    } else {
+                        loadAndVisualizeData(); // 计算完成后加载并展示数据
+                    }
+                } else {
+                    console.error('Invalid progress data:', data); // 如果数据无效，打印错误信息
+                }
+            })
+            .catch(error => console.error("Error updating progress:", error));
+        }
+
+        function visualizeRoseDiagram() {
+            fetch('../Data/low_quality_triples/low_quality_counts.json')
+                .then(response => response.json())
+                .then(data => {
+                    // 初始化 ECharts 实例
+                    var myChart = echarts.init(document.getElementById('echarts-container'));
+
+                    // 数据处理
+                    var seriesData = Object.keys(data).map(key => ({
+                        name: key,
+                        value: data[key]
+                    }));
+
+                    // 配置项
+                    var option = {
+                        title: {
+                            text: '低质量三元组分布图',
+                            top: 'bottom', // 标题在图表下方显示
+                            left: 'center' // 标题居中对齐
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{a} <br/>{b} : {c} ({d}%)'
+                        },
+                        legend: {
+                            orient: 'vertical',
+                            left: 10,
+                            data: Object.keys(data)
+                        },
+                        series: [
+                            {
+                                name: 'Count',
+                                type: 'pie',
+                                radius: '55%',
+                                center: ['50%', '50%'],
+                                data: seriesData,
+                                roseType: 'radius',
+                                label: {
+                                    formatter: '{b} ({d}%)'
+                                },
+                                emphasis: {
+                                    itemStyle: {
+                                        shadowBlur: 10,
+                                        shadowOffsetX: 0,
+                                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                    }
+                                }
+                            }
+                        ]
+                    };
+
+                    // 使用刚指定的配置项和数据显示图表。
+                    myChart.setOption(option);
+                })
+                .catch(error => console.error('Error loading rose diagram data:', error));
+        }
+
+        layui.use(['table', 'laypage'], function() {
+            const table = layui.table;
+            const laypage = layui.laypage;
+
+            // 将数据加载和可视化放在按钮点击事件中
+            document.querySelector('button[onclick="loadAndVisualizeData()"]').onclick = loadAndVisualizeData;
+        });
+    </script>
+</body>
+</html>

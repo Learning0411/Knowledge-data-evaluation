@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>基于实体关系数量的数据质量评价</title>
+    <script src="./static/js/echarts.min.js"></script>
+    <script src="./static/js/echarts-wordcloud.min.js"></script>
+    <link rel="stylesheet" href="../lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="../lib/font-awesome-4.7.0/css/font-awesome.min.css" media="all">
+    <link rel="stylesheet" href="../css/public.css" media="all">
+    <style>
+        .top-panel-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap; /* 允许面板在较小屏幕上换行 */
+        }
+        .top-panel {
+            flex: 1; /* 使所有面板占据相同的空间 */
+            border: 1px solid #eceff9;
+            border-radius: 5px;
+            text-align: center;
+            margin: 5px; /* 增加面板之间的间距 */
+            box-sizing: border-box;
+            max-width: calc(20% - 10px); /* 每个面板最大宽度，考虑到间距 */
+        }
+        .top-panel > .layui-card {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .top-panel > .layui-card-body {
+            height: 80px; /* 保持面板的高度 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .top-panel-number {
+            line-height: 60px;
+            font-size: 25px;
+            text-align: center;
+        }
+        .echarts-container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .echarts-left {
+            flex: 2;
+            padding: 10px;
+            background-color: #ffffff;
+            height: 795px;
+            margin-right: 15px; /* 增加echarts-left与echarts-right之间的间距 */
+        }
+        .echarts-right {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            justify-content: space-between;
+        }
+        .echarts-right > div {
+            background-color: #ffffff;
+            height: 400px; /* 每个饼图的高度 */
+            margin-bottom: 15px; /* 增加垂直间距 */
+        }
+        .container {
+            display: flex; /* 使用Flex布局 */
+            justify-content: space-between; /* 两个元素之间的空间均匀分布 */
+            align-items: center; /* 垂直居中对齐 */
+            width: 100%; /* 宽度占页面80% */
+            margin: 10px auto; /* 上下居中 */
+        }
+        .button-container {
+            flex: 0.5; /* 占据1/3的空间 */
+            text-align: left; /* 按钮左对齐 */
+        }
+        .progress-container {
+            flex: 2.5; /* 占据2/3的空间 */
+            text-align: right; /* 进度条右对齐 */
+        }
+        .button-container button {
+            margin: 0 10px; /* 按钮间距 */
+        }
+        .progress-bar {
+            width: 0%; /* 初始宽度为0% */
+            height: 30px; /* 高度 */
+            background-color: #4caf50; /* 进度条颜色 */
+            text-align: center; /* 文字居中 */
+            line-height: 30px; /* 行高 */
+            color: white; /* 文字颜色 */
+        }
+    </style>
+</head>
+<body>
+    <div class="top-panel-container">
+        <div class="top-panel">
+            <div class="layui-card">
+                <div class="layui-card-header">三元组数量</div>
+                <div class="layui-card-body">
+                    <div class="top-panel-number" id="triplet_count"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="top-panel">
+            <div class="layui-card">
+                <div class="layui-card-header">实体数量</div>
+                <div class="layui-card-body">
+                    <div class="top-panel-number" id="entity_count"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="top-panel">
+            <div class="layui-card">
+                <div class="layui-card-header">实体种类</div>
+                <div class="layui-card-body">
+                    <div class="top-panel-number" id="entity_label_types_count"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="top-panel">
+            <div class="layui-card">
+                <div class="layui-card-header">关系数量</div>
+                <div class="layui-card-body">
+                    <div class="top-panel-number" id="relationship_type_count"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="top-panel">
+            <div class="layui-card">
+                <div class="layui-card-header">实体关系密度</div>
+                <div class="layui-card-body">
+                    <div class="top-panel-number" id="entity_relationship_density"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="top-panel">
+            <div class="layui-card">
+                <div class="layui-card-header">连通分量</div>
+                <div class="layui-card-body">
+                    <div class="top-panel-number" id="num_components"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="layui-row layui-col-space15">
+        <div class="echarts-container">
+            <!-- 词云位置，宽度为饼图的两倍 -->
+            <div class="echarts-left">
+                <div id="entity_chart" style="width: 100%; height: 100%;"></div>
+            </div>
+            <!-- 实体类型数量分布图和关系类型数量分布图在词云右侧 -->
+            <div class="echarts-right">
+                <div id="echarts-pies1"></div>
+                <div id="echarts-pies2"></div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+            <div class="button-container">
+                <button onclick="startComputation()" type="button" class="layui-btn">开始评测</button>
+                <button onclick="loadAndVisualizeData()" type="button" class="layui-btn">刷新数据</button>
+            </div>
+
+            <!-- 进度条容器 -->
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar">0%</div>
+            </div>
+    </div>
+    <!-- 脚本 -->
+    <script type="text/javascript">
+        // 开始计算
+        function startComputation() {
+            fetch('http://127.0.0.1:8008/start-computation-quantity')
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.status);
+                    updateProgress(); // 开始计算后立即更新进度条
+                })
+                .catch(error => console.error("Error starting computation:", error));
+        }
+
+        // 更新进度条
+        function updateProgress() {
+            fetch('http://127.0.0.1:8008/get-quantity-progress')
+                .then(response => response.json())
+                .then(data => {
+                    const progressBar = document.getElementById('progress-bar');
+                    const progress = data.progress.toFixed(2); // 保留两位小数的进度值
+
+                    progressBar.style.width = progress + '%';
+                    progressBar.innerText = progress + '%'; // 更新进度条的显示文字
+
+                    if (progress < 100) {
+                        setTimeout(updateProgress, 1000); // 每秒钟更新一次进度条
+                    } else {
+                        loadAndVisualizeData(); // 计算完成后加载并展示数据
+                    }
+                })
+                .catch(error => console.error("Error updating progress:", error));
+        }
+
+        // 加载并展示数据
+        function loadAndVisualizeData() {
+            fetch('../Data/quality_report.json')
+                .then(response => response.json())
+                .then(data => {
+                    // 更新顶部面板的数据
+                    document.getElementById('triplet_count').innerText = data['三元组数量 (Triplet Count)'] || 0;
+                    document.getElementById('entity_count').innerText = data['实体数量 (Entity Count)'] || 0;
+                    document.getElementById('entity_label_types_count').innerText = data['实体种类数量 (Entity Label Types Count)'] || 0;
+                    document.getElementById('relationship_type_count').innerText = data['关系种类数量 (Relationship Type Count)'] || 0;
+                    document.getElementById('entity_relationship_density').innerText = data['实体关系密度 (Entity-Relationship Density)'] || 0;
+                    document.getElementById('num_components').innerText = data['连通度数量 (Connected Components Count)'] || 0;
+
+                    // 准备词云数据
+                    var topEntities = data['出现次数最多的前100个实体及其出现次数 (Most Frequent Entities)'] || [];
+                    var wordCloudData = topEntities.map(function(entity) {
+                        return { name: entity[0], value: entity[1] };
+                    });
+
+                    // 初始化词云图表
+                    var chart = echarts.init(document.getElementById('entity_chart'));
+                    var wordCloudOptions = {
+                        title: {
+                            text: '',
+                            left: 'center'
+                        },
+                        tooltip: {
+                            show: true
+                        },
+                        series: [{
+                            type: 'wordCloud',
+                            gridSize: 10,
+                            sizeRange: [30, 80],
+                            rotationRange: [-90, 90],
+                            shape: 'pentagon',
+                            width: '100%',
+                            height: '100%',
+                            drawOutOfBound: false,
+                            textStyle: {
+                                normal: {
+                                    color: function () {
+                                        return 'rgb(' + [
+                                            Math.round(Math.random() * 160),
+                                            Math.round(Math.random() * 160),
+                                            Math.round(Math.random() * 160)
+                                        ].join(',') + ')';
+                                    }
+                                },
+                                emphasis: {
+                                    shadowBlur: 10,
+                                    shadowColor: '#333'
+                                }
+                            },
+                            data: wordCloudData
+                        }]
+                    };
+                    chart.setOption(wordCloudOptions);
+
+                    // 准备实体类型数量分布图数据
+                    var topEntityLabels = data['出现次数最多的前15个实体 (Top 15 Entity Labels)'] || [];
+                    var entityLabelsData = topEntityLabels.map(function(label) {
+                        return { name: label[0], value: label[1] };
+                    });
+
+                    // 初始化实体类型数量分布图
+                    var chart1 = echarts.init(document.getElementById('echarts-pies1'));
+                    var option1 = {
+                        title: {
+                            text: '实体类型数量分布图',
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item'
+                        },
+                        legend: {
+                            orient: 'vertical',
+                            left: 'left'
+                        },
+                        series: [
+                            {
+                                name: '实体标签',
+                                type: 'pie',
+                                radius: '50%',
+                                data: entityLabelsData,
+                                emphasis: {
+                                    itemStyle: {
+                                        shadowBlur: 10,
+                                        shadowOffsetX: 0,
+                                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                    }
+                                }
+                            }
+                        ]
+                    };
+                    chart1.setOption(option1);
+
+                    // 准备关系类型数量分布图数据
+                    var topRelationships = data['出现次数最多的前15个关系及其出现次数 (Most Frequent Relationships)'] || [];
+                    var relationshipData = topRelationships.map(function(item) {
+                        return { name: item[0], value: item[1] };
+                    });
+
+                    // 初始化关系类型数量分布图
+                    var chart2 = echarts.init(document.getElementById('echarts-pies2'));
+                    var option2 = {
+                        title: {
+                            text: '关系类型数量分布图',
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item'
+                        },
+                        legend: {
+                            orient: 'vertical',
+                            left: 'left'
+                        },
+                        series: [
+                            {
+                                name: 'Relationships',
+                                type: 'pie',
+                                radius: '50%',
+                                data: relationshipData,
+                                emphasis: {
+                                    itemStyle: {
+                                        shadowBlur: 10,
+                                        shadowOffsetX: 0,
+                                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                    }
+                                }
+                            }
+                        ]
+                    };
+                    chart2.setOption(option2);
+                })
+                .catch(error => console.error('Error loading the JSON data:', error));
+        }
+
+        // 初次加载数据
+        loadAndVisualizeData();
+    </script>
+</body>
+</html>

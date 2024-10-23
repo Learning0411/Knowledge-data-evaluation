@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据上传模块</title>
+    <link rel="stylesheet" href="./static/bootstrap/css/bootstrap.min.css/">
+    <style>
+        .container {
+            margin-top: 50px;
+        }
+        .upload-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+        .upload-section h3 {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="upload-section">
+            <h3>上传三元组文件</h3>
+            <form id="triples-form" enctype="multipart/form-data">
+                <input type="file" id="triples-file" name="file" class="form-control" required>
+                <button type="submit" class="btn btn-primary mt-3">上传三元组文件</button>
+            </form>
+        </div>
+        <div class="upload-section">
+            <h3>上传实体文件</h3>
+            <form id="entities-form" enctype="multipart/form-data">
+                <input type="file" id="entities-file" name="file" class="form-control" required>
+                <button type="submit" class="btn btn-primary mt-3">上传实体文件</button>
+            </form>
+        </div>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        document.getElementById('triples-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            uploadFile('triples-file', 'triples');
+        });
+
+        document.getElementById('entities-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            uploadFile('entities-file', 'entities');
+        });
+
+        function uploadFile(inputId, fileType) {
+            var fileInput = document.getElementById(inputId);
+            var formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            fetch('/uploading/' + fileType, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('message').innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('message').innerHTML = '<div class="alert alert-danger">文件上传失败</div>';
+            });
+        }
+    </script>
+</body>
+</html>

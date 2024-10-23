@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>基于实体关系一致性评测</title>
+    <script src="./static/js/echarts.min.js"></script>
+    <link rel="stylesheet" href="../lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="../lib/font-awesome-4.7.0/css/font-awesome.min.css" media="all">
+    <link rel="stylesheet" href="../css/public.css" media="all">
+    <style>
+        .SI_container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            width: 100%;
+        }
+        .chart {
+            width: 98%;
+            height: 100%;
+            background-color: white;
+            margin-bottom: 20px;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin: 10px auto;
+        }
+        .button-container {
+            flex: 0.5;
+            text-align: left;
+        }
+        .progress-container {
+            flex: 2.5;
+            text-align: right;
+        }
+        .button-container button {
+            margin: 0 10px;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 30px;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0">
+
+    <div class="container">
+        <div class="button-container">
+            <button onclick="startComputation()" type="button" class="layui-btn">开始评测</button>
+            <button onclick="loadAndVisualizeData()" type="button" class="layui-btn">刷新数据</button>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar">0%</div>
+        </div>
+    </div>
+
+    <div class="SI_container">
+        <div id="relation_chart" class="chart" style="height: 600px;"></div>
+        <div id="bar_chart" class="chart" style="height: 400px;"></div>
+    </div>
+
+    <script>
+        function startComputation() {
+            fetch('http://127.0.0.1:8008/start-computation-similarity')
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.status);
+                    updateProgress(); // 开始计算时启动进度条更新
+                })
+                .catch(error => console.error("Error starting computation:", error));
+        }
+
+        function updateProgress() {
+            fetch('http://127.0.0.1:8008/get-similarity-progress')
+                .then(response => response.json())
+                .then(data => {
+                    const progressBar = document.getElementById('progress-bar');
+                    const progress = data.progress.toFixed(2); // 保留两位小数的进度值
+
+                    progressBar.style.width = progress + '%';
+                    progressBar.innerText = progress + '%'; // 更新进度条的显示文字
+
+                    if (progress < 100) {
+                        setTimeout(updateProgress, 1000); // 每秒钟更新一次进度条
+                    } else {
+                        loadAndVisualizeData(); // 计算完成后加载并展示数据
+                    }
+                })
+                .catch(error => console.error("Error updating progress:", error));
+        }
+
+        function loadAndVisualizeData() {
+            fetch('../Data/similarity/top_10_results.json')
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Top 10 Results Data:", data);
+                    visualizeRelationChart(data);
+                })
+                .catch(error => console.error("Error loading top_10_results.json:", error));
+
+            fetch('../Data/similarity/sorted_results.json')
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Sorted Results Data:", data);
+                    visualizeBarChart(data);
+                })
+                .catch(error => console.error("Error loading sorted_results.json:", error));
+        }
+
+        function visualizeRelationChart(data) {
+            var nodes = [];
+            var links = [];
+            var colors = ['#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae', '#749f83', '#ca8622', '#bda29a', '#6e7074', '#546570', '#c4ccd3', '#4a5266'];
+            var i = 0;
+
+            for (var label in data) {
+                nodes.push({
+                    id: label,
+                    name: label,
+                    category: label,
+                    symbolSize: 30,
+                    itemStyle: { color: colors[i % colors.length] },
+                    consistency_score: data[label].consistency_score
+                });
+
+                data[label].names.forEach((name, index) => {
+                    nodes.push({
+                        id: label + '-' + index,
+                        name: name,
+                        category: label,
+                        symbolSize: 20,
+                        itemStyle: { color: colors[i % colors.length] },
+                        consistency_score: data[label].consistency_score
+                    });
+
+                    links.push({
+                        source: label,
+                        target: label + '-' + index
+                    });
+                });
+
+                i++;
+            }
+
+            var chart = echarts.init(document.getElementById('relation_chart'));
+
+            var option = {
+                title: { text: 'Top 10 实体相似关系', left: 'center' },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function (params) {
+                        return `${params.name}<br/>一致性得分: ${params.data.consistency_score}`;
+                    }
+                },
+                legend: { orient: 'vertical', left: 'left', data: Object.keys(data) },
+                series: [
+                    {
+                        type: 'graph',
+                        layout: 'force',
+                        symbolSize: 50,
+                        roam: true,
+                        label: { show: true, position: 'inside' },
+                        force: {
+                            repulsion: 1000,
+                            edgeLength: [50, 70],
+                            gravity: 2
+                        },
+                        data: nodes,
+                        links: links,
+                        categories: Object.keys(data).map(label => ({ name: label })),
+                        lineStyle: { color: 'source', curveness: 0.3 }
+                    }
+                ]
+            };
+
+            chart.setOption(option);
+        }
+
+        function visualizeBarChart(data) {
+            var labels = [];
+            var scores = [];
+
+            for (var label in data) {
+                labels.push(label);
+                scores.push(data[label].consistency_score);
+            }
+
+            var chart = echarts.init(document.getElementById('bar_chart'));
+
+            var option = {
+                title: { text: '实体一致性得分', left: 'center' },
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                xAxis: { type: 'category', data: labels },
+                yAxis: { type: 'value' },
+                dataZoom: [
+                    {
+                        type: 'slider',
+                        show: true,
+                        xAxisIndex: [0],
+                        start: 0,
+                        end: 10
+                    },
+                    {
+                        type: 'inside',
+                        xAxisIndex: [0],
+                        start: 0,
+                        end: 10
+                    }
+                ],
+                series: [{ type: 'bar', data: scores }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 页面加载时调用
+        window.onload = loadAndVisualizeData;
+    </script>
+</body>
+</html>

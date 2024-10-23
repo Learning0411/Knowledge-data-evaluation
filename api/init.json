@@ -1,0 +1,66 @@
+{
+  "homeInfo": {
+    "title": "首页",
+    "href": "page/loading.html"
+  },
+  "logoInfo": {
+    "title": "知识图谱",
+    "image": "../images/logo2.png",
+    "href": ""
+  },
+  "menuInfo": [
+    {
+      "title": "数据质量检测评估",
+      "icon": "fa fa-address-book",
+      "href": "",
+      "target": "_self",
+      "child": [
+
+                {
+          "title": "数据处理",
+          "href": "page/loading.html",
+          "icon": "fa fa-home",
+          "target": "_self"
+        },
+
+        {
+          "title": "基于数量评估",
+          "href": "page/number.html",
+          "icon": "fa fa-sort-numeric-asc",
+          "target": "_self"
+        },
+        {
+          "title": "基于一致性评估",
+          "href": "page/NER.html",
+          "icon": "fa fa-check-circle",
+          "target": "_self"
+        },
+        {
+
+              "title": "基于比例评估",
+              "href": "page/RelationExtrac.html",
+              "icon": "fa fa-pie-chart",
+              "target": "_self"
+        },
+        {
+          "title": "基于内容关联度评估",
+          "href": "page/pretreat.html",
+          "icon": "fa fa-sitemap",
+          "target": "_self"
+        },
+        {
+          "title": "存量数据质量筛选",
+          "href": "page/screening.html",
+          "icon": "fa fa-filter",
+          "target": "_self"
+        },
+        {
+          "title": "说明文档",
+          "href": "page/readme.html",
+          "icon": "fa fa-filter",
+          "target": "_self"
+        }
+      ]
+    }
+  ]
+}
