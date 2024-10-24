@@ -6,6 +6,8 @@ This system leverages advanced algorithms to evaluate data quality across multip
 1. Ensure Python 3.8 or higher is installed.
 2. Install ber-base-chinese https://huggingface.co/google-bert/bert-base-chinese
 3. Clone the repository and install dependencies: git clone https://github.com/Learning0411/Knowledge-data-evaluation.git
+## Usage
+To run the system, you need to prepare your data as triples in a CSV file. Each row in the CSV should represent a triple with three columns: subject, predicate, and object.
 ## Contribution Guidelines
 Contributions and pull requests are welcome. Please adhere to the guidelines specified in the CONTRIBUTING.md file.
 
