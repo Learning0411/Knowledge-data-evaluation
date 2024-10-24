@@ -12,4 +12,4 @@ To run the system, you need to prepare your data as triples in a CSV file. Each 
 Contributions and pull requests are welcome. Please adhere to the guidelines specified in the CONTRIBUTING.md file.
 
 ## Maintainers
-Principal Developer: Learning0411 gww723
+Principal Developer: Learning0411 gww723 lilinze123
